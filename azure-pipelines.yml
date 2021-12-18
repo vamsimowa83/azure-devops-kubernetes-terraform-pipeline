@@ -1,0 +1,69 @@
+
+trigger:
+- master
+
+resources:
+- repo: self
+
+variables:
+  tag: '$(Build.BuildId)'
+
+#stage 1
+#Build Docker Image
+#publish the k8s files
+
+stages:
+- stage: Build
+  displayName: Build image
+  jobs:  
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: Docker@2
+      inputs:
+        containerRegistry: 'Docker-Hub-Connection'
+        repository: 'vamsimowa83/currency-exchange-devops'
+        command: 'buildAndPush'
+        Dockerfile: '**/Dockerfile'
+        tags: '$(tag)'
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: '$(System.DefaultWorkingDirectory)'
+        Contents: '**/*.yaml'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'manifests'
+        publishLocation: 'Container'
+
+#stage 2
+#Download the k8s files
+#Deploy to k8s cluster with docker image
+
+- stage: Deploy
+  displayName: Deploy image
+  jobs:  
+  - job: Deply
+    displayName: Deploy
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:  
+  
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+       buildType: 'current'
+       artifactName: 'manifests'
+       itemPattern: '**/*.yaml'
+       targetPath: '$(System.ArtifactsDirectory)'
+
+    - task: KubernetesManifest@0
+      inputs:
+        action: 'deploy'
+        kubernetesServiceConnection: 'Azure-Kubernetes-Connection'
+        namespace: 'default'
+        manifests: '$(System.ArtifactsDirectory)/configuration/kubernetes/deployment.yaml'
+        containers: 'vamsimowa83/currency-exchange-devops:$(tag)'
