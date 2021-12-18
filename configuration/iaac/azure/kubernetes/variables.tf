@@ -3,7 +3,7 @@ variable client_secret {}
 variable ssh_public_key {}
 
 variable environment {
-    default = "dev"
+    default = "dev0455"
 }
 
 variable location {
