@@ -5,7 +5,7 @@ pool:
   vmImage: ubuntu-latest
 
 steps:
-- script: Deploy Terraform AzureKubernetes
+- script: echo Deploy Terraform AzureKubernetes
   displayName: 'Run a one-line script'
 
 - task: DownloadSecureFile@1
